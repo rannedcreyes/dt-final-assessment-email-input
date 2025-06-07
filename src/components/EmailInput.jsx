@@ -12,20 +12,19 @@ const EmailInput = React.memo(() => {
   };
 
   const handleTyping = (e) => {
-    let text = e.target.value;
+    const text = e.target.value;
     setTypedText(text);
     setSelectedIndex(-1);
 
     if (text !== "") {
-      let matches = [];
+      const matches = [];
 
       for (let i = 0; i < emails.length; i++) {
-        let email = emails[i];
-        let smallEmail = email.toLowerCase();
-        let smallText = text.toLowerCase();
+        const email = emails[i].toLowerCase();
+        const input = text.toLowerCase();
 
-        if (smallEmail.startsWith(smallText)) {
-          matches.push(email);
+        if (email.startsWith(input)) {
+          matches.push(emails[i]);
         }
       }
 
@@ -38,9 +37,9 @@ const EmailInput = React.memo(() => {
   const handleKeyDown = (e) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-
-      if (selectedIndex < choices.length - 1) {
-        setSelectedIndex(selectedIndex + 1);
+      const nextIndex = selectedIndex + 1;
+      if (nextIndex < choices.length) {
+        setSelectedIndex(nextIndex);
       } else {
         setSelectedIndex(0);
       }
@@ -48,32 +47,44 @@ const EmailInput = React.memo(() => {
 
     if (e.key === "ArrowUp") {
       e.preventDefault();
-
-      if (selectedIndex > 0) {
-        setSelectedIndex(selectedIndex - 1);
+      const prevIndex = selectedIndex - 1;
+      if (prevIndex >= 0) {
+        setSelectedIndex(prevIndex);
       } else {
         setSelectedIndex(choices.length - 1);
       }
     }
 
-    if (e.key === "Enter" || e.key === "Tab") {
+    if (e.key === "Enter") {
       e.preventDefault();
       if (selectedIndex >= 0 && selectedIndex < choices.length) {
-        addEmailTag(choices[selectedIndex]);
-      } else if (typedText !== "") {
-        addEmailTag(typedText);
+        addEmail(choices[selectedIndex]);
+      } else {
+        if (typedText !== "") {
+          addEmail(typedText);
+        }
       }
       setTypedText("");
       setChoices([]);
       setSelectedIndex(-1);
     }
+
+    if (e.key === "Tab") {
+      if (typedText !== "") {
+        e.preventDefault();
+        addEmail(typedText);
+        setTypedText("");
+        setChoices([]);
+        setSelectedIndex(-1);
+      }
+    }
   };
 
-  const addEmailTag = (email) => {
-    let exists = selectedEmails.some((e) => e.text === email);
+  const addEmail = (email) => {
+    const exists = selectedEmails.find((e) => e.text === email);
 
     if (!exists) {
-      let tag = {
+      const tag = {
         text: email,
         valid: isEmailValid(email),
       };
@@ -83,11 +94,12 @@ const EmailInput = React.memo(() => {
   };
 
   const removeEmail = (text) => {
-    setSelectedEmails(selectedEmails.filter((e) => e.text !== text));
+    const filtered = selectedEmails.filter((e) => e.text !== text);
+    setSelectedEmails(filtered);
   };
 
-  const pickEmail = (email) => {
-    addEmailTag(email);
+  const handlePick = (email) => {
+    addEmail(email);
     setTypedText("");
     setChoices([]);
     setSelectedIndex(-1);
@@ -100,20 +112,22 @@ const EmailInput = React.memo(() => {
           className="flex flex-wrap items-center min-h-[50px] px-2 py-1 border border-gray-300 rounded-md bg-white gap-1"
           onClick={() => document.getElementById("email-input").focus()}
         >
-          {selectedEmails.map((item, idx) => (
+          {selectedEmails.map((item, i) => (
             <div
-              key={idx}
-              className={`flex items-center px-2 py-1 rounded text-sm cursor-pointer hover:bg-gray-300 ${
-                item.valid ? "text-black" : "text-red-600"
+              key={i}
+              className={`flex items-center px-2 py-1 rounded text-sm cursor-pointer ${
+                item.valid
+                  ? "text-black hover:bg-gray-300"
+                  : "bg-red-200 text-black"
               }`}
             >
               {item.text}
               <span
+                className="ml-1"
                 onClick={(e) => {
                   e.stopPropagation();
                   removeEmail(item.text);
                 }}
-                className="ml-1"
               >
                 ×
               </span>
@@ -123,10 +137,10 @@ const EmailInput = React.memo(() => {
           <input
             id="email-input"
             type="text"
+            value={typedText}
             placeholder={
               selectedEmails.length === 0 ? "Enter recipients..." : ""
             }
-            value={typedText}
             onChange={handleTyping}
             onKeyDown={handleKeyDown}
             className="flex-grow min-w-[80px] h-8 px-2 text-sm outline-none bg-white text-black border-none"
@@ -136,14 +150,14 @@ const EmailInput = React.memo(() => {
         {choices.length > 0 && (
           <ul className="mt-2 bg-white border border-gray-300 rounded-md shadow max-h-48 overflow-y-auto">
             {choices.map((email, index) => {
-              let isChosen = index === selectedIndex;
+              const isActive = index === selectedIndex;
 
               return (
                 <li
                   key={index}
-                  onClick={() => pickEmail(email)}
+                  onClick={() => handlePick(email)}
                   className={`px-4 py-2 text-sm cursor-pointer ${
-                    isChosen ? "bg-gray-300" : "hover:bg-gray-100"
+                    isActive ? "bg-gray-300" : "hover:bg-gray-100"
                   }`}
                 >
                   {email}
